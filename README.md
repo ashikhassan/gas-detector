@@ -35,6 +35,8 @@ An end-to-end IoT safety system combining **ESP32**, **MQ Gas Sensor**, **Meta W
 | **Alert LED** | Anode (+) | **GPIO 13** | Use 220Ω - 330Ω resistor |
 | **Alert LED** | Cathode (-) | GND | Ground |
 
+![Circuit Design](circuit-design.png)
+
 ---
 
 ## 🚀 Quick Start Guide
