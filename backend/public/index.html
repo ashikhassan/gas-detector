@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AegisGas IoT | Smart Gas Detector & WhatsApp Alert System</title>
+  <meta name="description" content="Real-time ESP32 MQ Gas Detection dashboard with WhatsApp Cloud API emergency alerts and dynamic threshold control.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <div class="app-wrapper">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-fire-flame-curved"></i>
+          <span class="pulse-ring"></span>
+        </div>
+        <div class="brand-text">
+          <h1>AEGIS<span>GAS</span></h1>
+          <span class="badge-iot">ESP32 IoT System</span>
+        </div>
+      </div>
+
+      <div class="nav-status-group">
+        <div id="deviceStatusBadge" class="status-pill offline">
+          <span class="status-dot"></span>
+          <span id="deviceStatusText" class="status-label">ESP32 Offline</span>
+        </div>
+
+        <div class="device-meta-pills">
+          <div class="meta-item" title="ESP32 IP Address">
+            <i class="fa-solid fa-network-wired"></i>
+            <span id="deviceIp">--</span>
+          </div>
+          <div class="meta-item" title="Wi-Fi Signal">
+            <i class="fa-solid fa-wifi"></i>
+            <span id="deviceRssi">-- dBm</span>
+          </div>
+        </div>
+
+        <button id="btnOpenSettings" class="btn-icon" title="WhatsApp & System Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Alert Banner (Appears when Gas is Detected) -->
+    <div id="hazardBanner" class="hazard-banner hidden">
+      <div class="hazard-content">
+        <i class="fa-solid fa-triangle-exclamation hazard-icon"></i>
+        <div class="hazard-info">
+          <h3>CRITICAL HAZARD: GAS LEAK DETECTED!</h3>
+          <p>Current level <strong id="bannerGasVal">0</strong> exceeds threshold <strong id="bannerThresholdVal">0</strong>. Local alarm & WhatsApp alert dispatched.</p>
+        </div>
+      </div>
+      <div class="hazard-actions">
+        <button id="btnMuteAlarm" class="btn-danger-outline">
+          <i class="fa-solid fa-volume-xmark"></i> Mute Buzzer
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid Dashboard -->
+    <main class="dashboard-grid">
+      <!-- Left Column: Primary Gauge & Hardware Indicators -->
+      <section class="card gauge-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-gauge-high"></i>
+            <h2>Live Gas Concentration</h2>
+          </div>
+          <span class="live-indicator"><span class="blink"></span> LIVE</span>
+        </div>
+
+        <div class="gauge-container">
+          <div class="circular-gauge">
+            <svg viewBox="0 0 200 200" class="gauge-svg">
+              <!-- Background track -->
+              <circle cx="100" cy="100" r="82" class="gauge-track" />
+              <!-- Dynamic progress arc -->
+              <circle id="gaugeProgress" cx="100" cy="100" r="82" class="gauge-fill" />
+            </svg>
+            <div class="gauge-center-content">
+              <span class="metric-label">MQ Sensor Value</span>
+              <span id="mainGasValue" class="metric-value">0</span>
+              <span id="gasLevelTag" class="safety-tag safe">NORMAL</span>
+              <span class="metric-sub">Scale: 0 - 4095 ADC</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hardware-indicators-grid">
+          <div id="buzzerIndicator" class="hw-box inactive">
+            <div class="hw-icon">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+            <div class="hw-details">
+              <span class="hw-label">Buzzer (GPIO 12)</span>
+              <span id="buzzerStateText" class="hw-val">OFF</span>
+            </div>
+          </div>
+
+          <div id="ledIndicator" class="hw-box inactive">
+            <div class="hw-icon">
+              <i class="fa-solid fa-lightbulb"></i>
+            </div>
+            <div class="hw-details">
+              <span class="hw-label">LED (GPIO 13)</span>
+              <span id="ledStateText" class="hw-val">OFF</span>
+            </div>
+          </div>
+
+          <div id="whatsappIndicator" class="hw-box connected">
+            <div class="hw-icon whatsapp">
+              <i class="fa-brands fa-whatsapp"></i>
+            </div>
+            <div class="hw-details">
+              <span class="hw-label">WhatsApp Cloud API</span>
+              <span id="whatsappStatusText" class="hw-val">Ready</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center-Right Column: Dynamic Controls & WhatsApp Quick Actions -->
+      <section class="card controls-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-sliders"></i>
+            <h2>Alarm Threshold & Operation</h2>
+          </div>
+        </div>
+
+        <div class="threshold-control-box">
+          <div class="threshold-header">
+            <div class="th-label-group">
+              <span class="th-title">Trigger Threshold</span>
+              <span class="th-subtitle">Alarm trips when gas reading exceeds this value</span>
+            </div>
+            <div class="threshold-display">
+              <span id="currentThresholdDisplay">2000</span>
+              <span class="unit">ADC</span>
+            </div>
+          </div>
+
+          <div class="slider-wrapper">
+            <input type="range" id="thresholdSlider" min="300" max="3800" step="50" value="2000">
+            <div class="slider-ticks">
+              <span>300 (Sensitive)</span>
+              <span>2000 (Standard)</span>
+              <span>3800 (High)</span>
+            </div>
+          </div>
+
+          <div class="preset-buttons">
+            <button class="btn-preset" data-val="1200">1200 (Low Test)</button>
+            <button class="btn-preset active" data-val="2000">2000 (Recommended)</button>
+            <button class="btn-preset" data-val="2850">2850 (Original)</button>
+          </div>
+        </div>
+
+        <!-- Simulator & Quick Test Panel -->
+        <div class="quick-tools-box">
+          <h3><i class="fa-solid fa-flask"></i> Interactive Testing Tools</h3>
+          <div class="tool-row">
+            <button id="btnSimulateSafe" class="btn-tool safe">
+              <i class="fa-solid fa-leaf"></i> Simulate Normal (850)
+            </button>
+            <button id="btnSimulateLeak" class="btn-tool hazard">
+              <i class="fa-solid fa-skull-crossbones"></i> Simulate Gas Leak (2600)
+            </button>
+          </div>
+
+          <div class="tool-row">
+            <button id="btnTestWhatsApp" class="btn-tool whatsapp-btn">
+              <i class="fa-brands fa-whatsapp"></i> Test WhatsApp Alert
+            </button>
+            <button id="btnToggleAudio" class="btn-tool audio-btn">
+              <i class="fa-solid fa-volume-high"></i> <span id="audioBtnText">Web Audio: ON</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Full Width: Real-time Telemetry Graph -->
+      <section class="card chart-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-chart-line"></i>
+            <h2>Real-Time Gas Trend & History</h2>
+          </div>
+          <div class="chart-legend-custom">
+            <span class="legend-item"><span class="color-box gas-color"></span> Gas Level</span>
+            <span class="legend-item"><span class="color-box threshold-color"></span> Threshold</span>
+          </div>
+        </div>
+        <div class="chart-canvas-wrapper">
+          <canvas id="gasChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Full Width: Incident & Alert History Logs -->
+      <section class="card logs-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <h2>Gas Incident & Alert Logs</h2>
+          </div>
+          <button id="btnClearLogs" class="btn-sm btn-ghost">
+            <i class="fa-solid fa-trash-can"></i> Clear History
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Incident ID</th>
+                <th>Trigger Time</th>
+                <th>Peak Gas Value</th>
+                <th>Duration</th>
+                <th>WhatsApp Alert</th>
+              </tr>
+            </thead>
+            <tbody id="alertLogsBody">
+              <tr class="empty-row">
+                <td colspan="6">No safety incidents recorded. System running normally.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-brands fa-whatsapp"></i>
+            <h2>System & WhatsApp Cloud API Settings</h2>
+          </div>
+          <button id="btnCloseSettings" class="btn-close">&times;</button>
+        </div>
+        
+        <form id="settingsForm" class="modal-body">
+          <div class="form-section">
+            <h4><i class="fa-solid fa-key"></i> Meta WhatsApp Cloud API Credentials</h4>
+            <p class="form-tip">Get these from Meta for Developers &rarr; WhatsApp &rarr; API Setup</p>
+
+            <div class="form-group">
+              <label for="inputToken">Temporary / Permanent Access Token</label>
+              <div class="input-with-icon">
+                <input type="password" id="inputToken" placeholder="EAAB..." autocomplete="off">
+                <button type="button" class="btn-toggle-eye" id="btnToggleToken">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inputPhoneId">Phone Number ID</label>
+                <input type="text" id="inputPhoneId" placeholder="e.g. 1048273928192">
+              </div>
+              <div class="form-group">
+                <label for="inputRecipient">Recipient Phone (with country code, no +)</label>
+                <input type="text" id="inputRecipient" placeholder="e.g. 8801712345678">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="inputAlertTemplate">Alert Template Name</label>
+                <input type="text" id="inputAlertTemplate" value="gas_alert" placeholder="gas_alert">
+              </div>
+              <div class="form-group">
+                <label for="inputRecoveryTemplate">Recovery Template Name</label>
+                <input type="text" id="inputRecoveryTemplate" value="gas_recovered" placeholder="gas_recovered">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4><i class="fa-solid fa-sliders"></i> Hardware & Automated Alerts</h4>
+            
+            <div class="toggle-group">
+              <label class="toggle-switch">
+                <input type="checkbox" id="checkAutoWhatsapp" checked>
+                <span class="slider"></span>
+              </label>
+              <div class="toggle-text">
+                <strong>Automatically Send WhatsApp on Alert</strong>
+                <span>Sends message immediately when gas exceeds threshold</span>
+              </div>
+            </div>
+
+            <div class="toggle-group">
+              <label class="toggle-switch">
+                <input type="checkbox" id="checkMuteBuzzer">
+                <span class="slider"></span>
+              </label>
+              <div class="toggle-text">
+                <strong>Mute ESP32 Buzzer Override</strong>
+                <span>Disables physical buzzer sound while keeping visual alerts</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="btnCancelSettings" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

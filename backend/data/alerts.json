@@ -1,0 +1,82 @@
+[
+  {
+    "id": "ALT-1790431630048",
+    "startTime": "2026-09-26T14:07:10.047Z",
+    "startTimestamp": 1790431630047,
+    "peakValue": 1147,
+    "threshold": 850,
+    "status": "resolved",
+    "whatsappAlertSent": false,
+    "whatsappRecoverySent": false,
+    "whatsappAlertDetails": {
+      "success": false,
+      "error": "WhatsApp Cloud API credentials or Recipient number not configured."
+    },
+    "endTime": "2026-09-26T14:07:29.652Z",
+    "durationSeconds": 20
+  },
+  {
+    "id": "ALT-1790431610705",
+    "startTime": "2026-09-26T14:06:50.704Z",
+    "startTimestamp": 1790431610704,
+    "peakValue": 1150,
+    "threshold": 850,
+    "status": "resolved",
+    "whatsappAlertSent": false,
+    "whatsappRecoverySent": false,
+    "whatsappAlertDetails": {
+      "success": false,
+      "error": "WhatsApp Cloud API credentials or Recipient number not configured."
+    },
+    "endTime": "2026-09-26T14:07:05.949Z",
+    "durationSeconds": 15
+  },
+  {
+    "id": "ALT-1790431586319",
+    "startTime": "2026-09-26T14:06:26.319Z",
+    "startTimestamp": 1790431586319,
+    "peakValue": 2600,
+    "threshold": 1850,
+    "status": "resolved",
+    "whatsappAlertSent": false,
+    "whatsappRecoverySent": false,
+    "whatsappAlertDetails": {
+      "success": false,
+      "error": "WhatsApp Cloud API credentials or Recipient number not configured."
+    },
+    "endTime": "2026-09-26T14:06:26.896Z",
+    "durationSeconds": 1
+  },
+  {
+    "id": "ALT-1790431579372",
+    "startTime": "2026-09-26T14:06:19.371Z",
+    "startTimestamp": 1790431579371,
+    "peakValue": 2600,
+    "threshold": 1850,
+    "status": "resolved",
+    "whatsappAlertSent": false,
+    "whatsappRecoverySent": false,
+    "whatsappAlertDetails": {
+      "success": false,
+      "error": "WhatsApp Cloud API credentials or Recipient number not configured."
+    },
+    "endTime": "2026-09-26T14:06:19.715Z",
+    "durationSeconds": 0
+  },
+  {
+    "id": "ALT-1790430465976",
+    "startTime": "2026-09-26T13:47:45.975Z",
+    "startTimestamp": 1790430465975,
+    "peakValue": 2750,
+    "threshold": 1850,
+    "status": "resolved",
+    "whatsappAlertSent": false,
+    "whatsappRecoverySent": false,
+    "whatsappAlertDetails": {
+      "success": false,
+      "error": "WhatsApp Cloud API credentials or Recipient number not configured."
+    },
+    "endTime": "2026-09-26T14:05:32.081Z",
+    "durationSeconds": 1066
+  }
+]

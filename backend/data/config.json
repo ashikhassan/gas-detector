@@ -1,0 +1,11 @@
+{
+  "gasThreshold": 2000,
+  "whatsappToken": "EAAh67MIq2bABShfOrIrJNdTKqNvbbZBLZABbJHllRYomv4ZBID4Vcp8OBurl9GpGLfhLDjQGEtdNfsptOZAGWTfeoaBHzAkThS71qDUgIllsTYRT33P8cQJRalRpBWthw8rV6V6apZBVdQL3MZAYTZADxGh9MzsMsxBCgSJJ7O2GHBFvEXlGdyFNaF5cYRJlbSS7HMeVZBMTlZCmVXmEqbMAG0Fos40WZC2A2KetlQsXyuQbwLHJbp2LV6w1kdpXpCshdD4yZCmtlga6EWRGwloHD34boUI",
+  "phoneNumberId": "1390059624182682",
+  "recipientPhone": "8801710692460",
+  "graphApiVersion": "v23.0",
+  "alertTemplateName": "gas_alert",
+  "recoveryTemplateName": "gas_recovered",
+  "autoNotifyWhatsapp": true,
+  "buzzerMuted": false
+}
